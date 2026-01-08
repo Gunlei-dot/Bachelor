@@ -56,7 +56,7 @@ if len(X_test) != len(y_test):
 print("Train shape:", X_train.shape, "Test shape:", X_test.shape)
 print("Unique labels:", np.unique(y_train))
 
-mlflow.set_experiment("Inital tests new data")
+mlflow.set_experiment("Initial tests new data")
 
 try:
     with mlflow.start_run() as run:  # Everything inside this block is logged
@@ -73,22 +73,87 @@ try:
         # Log parameters
         mlflow.log_params(params)
 
-        # Train model(chose whichever applies and set params accordingly)
+            # Train model(chose whichever applies and set params accordingly)
        
-        model = tree.DecisionTreeClassifier(**params)
-        #model = RandomForestClassifier(**params)
+        #model = tree.DecisionTreeClassifier(**params)
+        model = RandomForestClassifier(**params)
         #model = GradientBoostingClassifier(**params)
 
         model = model.fit(X_train, y_train)
 
+
         # Evaluate
         y_pred = model.predict(X_test)
 
+    #######################################################
+
+        class_names = ["0", "1"]  # 0 = no cancer, 1 = cancer
+
+        avg_confidence = model.predict_proba(X_test)  
+
+        confidence_df = pd.DataFrame(avg_confidence, columns=[f"confidence_{c}" for c in class_names])
+
+        confidence_df["true_label"] = y_test
+        confidence_df["predicted_label"] = avg_confidence.argmax(axis=1)
+        confidence_df.to_csv("predictions_with_confidence.csv", index=False) # this currently saves to working dir, not intended, should go to mlflow artifacts
+
+        fig_conf, ax_conf = plt.subplots(figsize=(7, 5))
+
+        for i, cls in enumerate(class_names):
+            ax_conf.hist(
+            avg_confidence[:, i],
+            bins=20,
+            alpha=0.5,
+            label=cls
+         )
+
+        ax_conf.set_xlabel("Confidence")
+        ax_conf.set_ylabel("Count")
+        ax_conf.legend()
+
+        mlflow.log_figure(fig_conf, "confidence_distributions.png")
+        plt.close(fig_conf)
+
+
+        df = confidence_df.copy()
+
+        df["correct"] = df["predicted_label"] == df["true_label"]
+        df["max_confidence"] = df[["confidence_0", "confidence_1"]].max(axis=1)
+
+        fig_ovl, ax_ovl = plt.subplots(figsize=(7, 5))
+
+        ax_ovl.hist(
+            df[df["correct"]]["max_confidence"],
+            bins=20,
+            alpha=0.6,
+            label="Correct",
+        )
+
+        ax_ovl.hist(
+            df[~df["correct"]]["max_confidence"],
+            bins=20,
+            alpha=0.6,
+            label="Incorrect",
+        )
+
+        ax_ovl.set_xlabel("Max confidence")
+        ax_ovl.set_ylabel("Count")
+        ax_ovl.legend()
+
+        mlflow.log_figure(fig_ovl, "overlap_histogram.png")
+        plt.close(fig_ovl)
+
+
         cm = confusion_matrix(y_test, y_pred)
 
-        fig, ax = plt.subplots(figsize=(6,6))
+        fig_cm, ax_cm = plt.subplots(figsize=(6,6))
         disp = ConfusionMatrixDisplay(confusion_matrix = cm)
-        disp.plot(ax=ax, cmap="Greens")
+        disp.plot(ax=ax_cm, cmap="Greens")
+
+        mlflow.log_figure(fig_cm, "confusion_matrix.png")
+        plt.close(fig_cm)
+
+    #######################################################
 
         metrics = {
             "accuracy": accuracy_score(y_test, y_pred),
@@ -101,11 +166,14 @@ try:
         mlflow.log_metrics(metrics)
         signature = infer_signature(X_train, model.predict(X_train))
 
-        mlflow.log_figure(fig, "confusion_matrix.png")
+        
+        mlflow.log_artifact("predictions_with_confidence.csv")
+         
+        
 
         mlflow.sklearn.log_model(
             sk_model=model,
-            name="ND_tree",             # Change model name accordingly
+            name="ND_forest_RS42_min_leaf",             # Change model name accordingly
             signature=signature
         )
 
@@ -119,3 +187,5 @@ except Exception as e:
 
 print("Metrics logged to MLflow:")
 print("Classification Report:\n", classification_report(y_test, y_pred))
+
+
