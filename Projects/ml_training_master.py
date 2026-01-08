@@ -8,7 +8,7 @@ from mlflow.models import infer_signature
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score  # metrics for manual model eval
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay  # metrics for manual model eval
 
 tsv1 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\labels.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
 tsv2 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\prostate_stats.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
@@ -83,6 +83,13 @@ try:
 
         # Evaluate
         y_pred = model.predict(X_test)
+
+        cm = confusion_matrix(y_test, y_pred)
+
+        fig, ax = plt.subplots(figsize=(6,6))
+        disp = ConfusionMatrixDisplay(confusion_matrix = cm)
+        disp.plot(ax=ax, cmap="Greens")
+
         metrics = {
             "accuracy": accuracy_score(y_test, y_pred),
             "precision": precision_score(y_test, y_pred, average="weighted"),
@@ -93,6 +100,8 @@ try:
         # Log metrics and model
         mlflow.log_metrics(metrics)
         signature = infer_signature(X_train, model.predict(X_train))
+
+        mlflow.log_figure(fig, "confusion_matrix.png")
 
         mlflow.sklearn.log_model(
             sk_model=model,
