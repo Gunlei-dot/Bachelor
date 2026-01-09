@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
+import mlflow.xgboost
 import traceback
 import shap
 from mlflow.models import infer_signature
@@ -12,10 +13,11 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score  # metrics for manual model eval
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import GradientBoostingClassifier
+from xgboost import XGBClassifier
 
 
 mlflow.sklearn.autolog(max_tuning_runs=1)
-mlflow.set_experiment("final tests")
+mlflow.set_experiment("new data testing")
 
 tsv1 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\labels.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
 tsv2 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\prostate_stats.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
@@ -62,32 +64,51 @@ eval_data['label']= y_test #create eval data for flow evaluation
 
 param_grid = {
     'random_state': [42],
+    'scale_pos_weight': [0.15, 0.2, 0.25, 0.3],
+    'n_estimators': [300],
+    'max_depth': [4],
+    'learning_rate': [0.05],
+    'subsample': [0.8],
+    'colsample_bytree': [0.8],
+    'eval_metric': ['logloss'],
+    'objective': ['binary:logistic'],
 }
 
 # Dropping the set indicator columns after the split
 try:
-    with mlflow.start_run(run_name='_param_tuning') as run: # Start an MLflow run to log parameters, metrics, and the model   
+    with mlflow.start_run(run_name='ND_param_tuning') as run: # Start an MLflow run to log parameters, metrics, and the model   
         print("MLflow run started successfully!")
         print(f"Run ID: {run.info.run_id}")
         print(f"Experiment ID: {run.info.experiment_id}")
         print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")
         
-        rf_classifier = GradientBoostingClassifier(random_state=42)
-        grid_search = GridSearchCV(estimator=rf_classifier, param_grid=param_grid, cv=5, n_jobs=-1, scoring='f1', error_score='raise')
+        classifier = XGBClassifier()
+        grid_search = GridSearchCV(estimator=classifier, param_grid=param_grid, cv=5, n_jobs=-1, scoring='recall', error_score='raise')
         grid_search.fit(X_train, y_train)
 
         best_params = grid_search.best_params_
         best_score = grid_search.best_score_
 
-        model = GradientBoostingClassifier(**best_params)
+        model = XGBClassifier(**best_params)
         model = model.fit(X_train, y_train)
+
+        probs = model.predict_proba(X_test)[:, 1]  #implemtent probs for threshold tuning
+        eval_data['pred_prob'] = probs
+
+        thresholds = np.linspace(0.1, 0.5, 9)  # adjust for high-recall
+        for t in thresholds:
+            preds = (probs >= t).astype(int)
+            recall = recall_score(y_test, preds)
+            cm = confusion_matrix(y_test, preds)
+            print(f"Threshold {t:.2f} | Recall: {recall:.3f} | FN: {cm[1,0]}")
         
          # do manual parameter tracking so only the important bits are saved, reduce to the best estimator per run
-        predict = model.predict(X_test)
-        signature = infer_signature(X_train, predict) 
-        model_info = mlflow.sklearn.log_model(model, "model", signature=signature)
+    
+        signature = infer_signature(X_train, model.predict(X_train)) 
+        model_info = mlflow.sklearn.log_model(model, name="threshold_testing_boost", signature=signature)                ##Adjust type depending on model used
+        mlflow.log_metric(f"recall_threshold_{t:.2f}", recall)
         
-        #eval_data['output']= predict
+        
         
         result = mlflow.evaluate(
             model_info.model_uri,
@@ -95,8 +116,6 @@ try:
             targets= "label",
             model_type= "classifier",
             evaluators="default",
-           # predictions= "output",
-
         )
         
 
@@ -112,6 +131,7 @@ except Exception as e:
 print(f"Best parameters: {grid_search.best_params_}")
 print(f"Best cross-validation score: {grid_search.best_score_:.3f}")
 print(f"Test score: {best_score:.3f}")
-print(f"Accuracy: {result.metrics['accuracy_score']:.3f}")
+print(f"Recall: {result.metrics['recall_score']:.3f}")
 print(f"F1 Score: {result.metrics['f1_score']:.3f}")
 print(f"ROC AUC: {result.metrics['roc_auc']:.3f}")
+print("Classification Report:\n", classification_report(y_test, preds))
