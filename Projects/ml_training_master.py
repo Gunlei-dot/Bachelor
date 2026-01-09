@@ -6,6 +6,7 @@ import mlflow.sklearn
 import traceback
 from mlflow.models import infer_signature
 from sklearn import tree
+from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay  # metrics for manual model eval
@@ -67,7 +68,16 @@ try:
         
         params = {
             'random_state' : 42,
-            'min_weight_fraction_leaf': 0.1,
+            #'min_weight_fraction_leaf': 0.1,
+            'random_state': 42,
+            'scale_pos_weight': 0.3,
+            'n_estimators': 300,
+            'max_depth': 4,
+            'learning_rate': 0.05,
+            'subsample': 0.8,
+            'colsample_bytree': 0.8,
+            'eval_metric': 'logloss',
+             'objective': 'binary:logistic',
         }
 
         # Log parameters
@@ -76,16 +86,19 @@ try:
             # Train model(chose whichever applies and set params accordingly)
        
         #model = tree.DecisionTreeClassifier(**params)
-        model = RandomForestClassifier(**params)
+        #model = RandomForestClassifier(**params)
         #model = GradientBoostingClassifier(**params)
+        model = XGBClassifier(**params)
 
         model = model.fit(X_train, y_train)
 
-
+        #######################################################
         # Evaluate
-        y_pred = model.predict(X_test)
 
-    #######################################################
+        #y_pred = model.predict(X_test) # standard predict at 0.5 threshold
+        y_prob = model.predict_proba(X_test)[:, 1]  # get probabilities for threshold tuning
+        threshold = 0.50  # set threshold for high-recall
+        y_pred = (y_prob >= threshold).astype(int)
 
         class_names = ["0", "1"]  # 0 = no cancer, 1 = cancer
 
@@ -96,6 +109,18 @@ try:
         confidence_df["true_label"] = y_test
         confidence_df["predicted_label"] = avg_confidence.argmax(axis=1)
         confidence_df.to_csv("predictions_with_confidence.csv", index=False) # this currently saves to working dir, not intended, should go to mlflow artifacts
+        
+        df = confidence_df.copy()
+
+        df["max_confidence"] = df[["confidence_0", "confidence_1"]].max(axis=1) # get max confidence per prediction 
+
+        high_conf_errors = df[  
+            (df["predicted_label"] != df["true_label"]) &
+            (df["max_confidence"] > 0.8)
+        ] # filter for high-confidence errors
+
+        print("High-confidence errors by true class:")
+        print(high_conf_errors["true_label"].value_counts())
 
         fig_conf, ax_conf = plt.subplots(figsize=(7, 5))
 
@@ -164,16 +189,13 @@ try:
 
         # Log metrics and model
         mlflow.log_metrics(metrics)
-        signature = infer_signature(X_train, model.predict(X_train))
-
-        
         mlflow.log_artifact("predictions_with_confidence.csv")
-         
+        signature = infer_signature(X_train, model.predict(X_train))
         
 
         mlflow.sklearn.log_model(
             sk_model=model,
-            name="ND_forest_RS42_min_leaf",             # Change model name accordingly
+            name="ND_boost_threshold_050",             # Change model name accordingly
             signature=signature
         )
 
@@ -187,5 +209,6 @@ except Exception as e:
 
 print("Metrics logged to MLflow:")
 print("Classification Report:\n", classification_report(y_test, y_pred))
+
 
 
