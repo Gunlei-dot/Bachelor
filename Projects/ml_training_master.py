@@ -10,6 +10,8 @@ from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay  # metrics for manual model eval
+import seaborn as sns
+
 
 tsv1 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\labels.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
 tsv2 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\prostate_stats.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
@@ -178,6 +180,29 @@ try:
         mlflow.log_figure(fig_cm, "confusion_matrix.png")
         plt.close(fig_cm)
 
+        plt.figure(figsize=(7, 5))
+
+        sns.kdeplot(
+            y_prob[y_test == 0],
+            label="True class 0 (no recurrence)",
+            fill=True,
+        alpha=0.4
+        )
+
+        sns.kdeplot(
+            y_prob[y_test == 1],
+            label="True class 1 (recurrence)",
+            fill=True,
+            alpha=0.4
+        )
+        plt.xlabel("Predicted P(recurrence | x)")
+        plt.ylabel("Density")
+        plt.title("Posterior Probability Overlap (Bayes Error Illustration)")
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
     #######################################################
 
         metrics = {
@@ -198,6 +223,7 @@ try:
             name="ND_boost_threshold_050",             # Change model name accordingly
             signature=signature
         )
+    #######################################################
 
     mlflow.end_run()
 
@@ -210,5 +236,12 @@ except Exception as e:
 print("Metrics logged to MLflow:")
 print("Classification Report:\n", classification_report(y_test, y_pred))
 
+bins = np.linspace(0, 1, 50)
+
+hist0, _ = np.histogram(y_prob[y_test == 0], bins=bins, density=True)
+hist1, _ = np.histogram(y_prob[y_test == 1], bins=bins, density=True)
+
+bayes_error_est = np.sum(np.minimum(hist0, hist1)) * (bins[1] - bins[0])
+print("Estimated Bayes overlap:", bayes_error_est)
 
 
