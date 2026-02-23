@@ -13,12 +13,15 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import seaborn as sns
 
 
+
+
 tsv1 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\labels.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
 tsv2 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\prostate_stats.tsv', encoding='utf-8', sep='\t') #encoding and sep to read tsv correctly
 
 patient_data = pd.merge(tsv1, tsv2, left_index=True, right_index=True)
 patient_data = patient_data.dropna() # Drop rows with missing values for simplicity 
 patient_data = patient_data.drop(columns=['pseudo_id', 'sex', 'pseudo_patid', 'pid', 'cx_px', 'cy_px', 'cz_px', 'cx', 'cy', 'cz']) # Drop patient_id as it's not a feature for prediction
+patient_data = patient_data.drop(columns=['psa', 'age', 'min', 'vol_pix', 'rmax', 'rmin', 'mean'])
 patient_data = patient_data[patient_data.label != 2] # Remove rows with label 2 as these are not relevant for binary classification
 patient_data = patient_data[patient_data.psa != 'NA'] # remove rows with no psa value till i find a better solution
 patient_data = patient_data[patient_data.staging != 'primary'] # remove rows with primary staging till i find a better solution
@@ -69,7 +72,6 @@ try:
         print(f"MLflow tracking URI: {mlflow.get_tracking_uri()}")   
         
         params = {
-            'random_state' : 42,
             #'min_weight_fraction_leaf': 0.1,
             'random_state': 42,
             'scale_pos_weight': 0.3,
@@ -79,7 +81,7 @@ try:
             'subsample': 0.8,
             'colsample_bytree': 0.8,
             'eval_metric': 'logloss',
-             'objective': 'binary:logistic',
+            'objective': 'binary:logistic',
         }
 
         # Log parameters
@@ -99,7 +101,7 @@ try:
 
         #y_pred = model.predict(X_test) # standard predict at 0.5 threshold
         y_prob = model.predict_proba(X_test)[:, 1]  # get probabilities for threshold tuning
-        threshold = 0.50  # set threshold for high-recall
+        threshold = 0.5  # set threshold for high-recall
         y_pred = (y_prob >= threshold).astype(int)
 
         class_names = ["0", "1"]  # 0 = no cancer, 1 = cancer
@@ -220,7 +222,7 @@ try:
 
         mlflow.sklearn.log_model(
             sk_model=model,
-            name="ND_boost_threshold_050",             # Change model name accordingly
+            name="ND_boost_only_new",             # Change model name accordingly
             signature=signature
         )
     #######################################################
@@ -243,5 +245,4 @@ hist1, _ = np.histogram(y_prob[y_test == 1], bins=bins, density=True)
 
 bayes_error_est = np.sum(np.minimum(hist0, hist1)) * (bins[1] - bins[0])
 print("Estimated Bayes overlap:", bayes_error_est)
-
 

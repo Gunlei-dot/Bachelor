@@ -25,17 +25,18 @@ tsv2 = pd.read_csv(r'C:\Users\s434037\Desktop\Bachelor\data\prostate_stats.tsv',
 patient_data = pd.merge(tsv1, tsv2, left_index=True, right_index=True)
 patient_data = patient_data.dropna() # Drop rows with missing values for simplicity 
 patient_data = patient_data.drop(columns=['pseudo_id', 'sex', 'pseudo_patid', 'pid', 'cx_px', 'cy_px', 'cz_px', 'cx', 'cy', 'cz']) # Drop patient_id as it's not a feature for prediction
+patient_data = patient_data.drop(columns=['psa', 'age', 'min', 'vol_pix', 'rmax', 'rmin', 'mean'])
 patient_data = patient_data[patient_data.label != 2] # Remove rows with label 2 as these are not relevant for binary classification
-patient_data = patient_data[patient_data.psa != 'NA'] # remove rows with no psa value till i find a better solution
+#patient_data = patient_data[patient_data.psa != 'NA'] # remove rows with no psa value till i find a better solution
 patient_data = patient_data[patient_data.staging != 'primary'] # remove rows with primary staging till i find a better solution
 
-patient_data['age'] = patient_data['age'].astype(float) # convert any ints to float to stop MLflow whining
+#patient_data['age'] = patient_data['age'].astype(float) # convert any ints to float to stop MLflow whining
 patient_data['px'] = patient_data['px'].astype(float) 
-patient_data['min'] = patient_data['min'].astype(float)
+#patient_data['min'] = patient_data['min'].astype(float)
 patient_data['max'] = patient_data['max'].astype(float)
-patient_data['rmin'] = patient_data['rmax'].astype(float)
-patient_data['mean'] = patient_data['mean'].astype(float)
-patient_data['vol_pix'] = patient_data['vol_pix'].astype(float)
+#patient_data['rmin'] = patient_data['rmax'].astype(float)
+#patient_data['mean'] = patient_data['mean'].astype(float)
+#patient_data['vol_pix'] = patient_data['vol_pix'].astype(float)
 patient_data['vol_mm3'] = patient_data['vol_mm3'].astype(float)
 patient_data['sd'] = patient_data['sd'].astype(float)
 
@@ -107,8 +108,11 @@ try:
         signature = infer_signature(X_train, model.predict(X_train)) 
         model_info = mlflow.sklearn.log_model(model, name="threshold_testing_boost", signature=signature)                ##Adjust type depending on model used
         mlflow.log_metric(f"recall_threshold_{t:.2f}", recall)
+
         
-        
+
+        '''scores_full = cross_val_score(model, X_test, y, scoring='roc_auc', cv=5)
+        scores_reduced = cross_val_score(model, X_reduced, y, scoring='roc_auc', cv=5)'''
         
         result = mlflow.evaluate(
             model_info.model_uri,
@@ -135,3 +139,4 @@ print(f"Recall: {result.metrics['recall_score']:.3f}")
 print(f"F1 Score: {result.metrics['f1_score']:.3f}")
 print(f"ROC AUC: {result.metrics['roc_auc']:.3f}")
 print("Classification Report:\n", classification_report(y_test, preds))
+#print(scores_full.mean(), scores_reduced.mean())
