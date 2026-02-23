@@ -1,0 +1,36 @@
+artifact_path: file:///C:/Users/s434037/Desktop/Bachelor/mlruns/149571709700539732/models/m-f4171bd1d3124304aebbf2389b6c25a7/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.12
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+is_signature_from_type_hint: false
+mlflow_version: 3.5.1
+model_id: m-f4171bd1d3124304aebbf2389b6c25a7
+model_size_bytes: 416254
+model_uuid: m-f4171bd1d3124304aebbf2389b6c25a7
+prompts: null
+run_id: 77d9adcbab2146d78a8cabb65992c6f7
+signature:
+  inputs: '[{"type": "double", "name": "age", "required": true}, {"type": "double",
+    "name": "px", "required": true}, {"type": "double", "name": "psa", "required":
+    true}, {"type": "double", "name": "min", "required": true}, {"type": "double",
+    "name": "max", "required": true}, {"type": "double", "name": "rmin", "required":
+    true}, {"type": "double", "name": "rmax", "required": true}, {"type": "long",
+    "name": "vol_pix", "required": true}, {"type": "double", "name": "vol_mm3", "required":
+    true}, {"type": "double", "name": "mean", "required": true}, {"type": "double",
+    "name": "sd", "required": true}, {"type": "boolean", "name": "staging_re", "required":
+    true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-01-09 14:00:41.277354'

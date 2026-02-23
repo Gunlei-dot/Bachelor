@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/s434037/Desktop/Bachelor/mlruns/149571709700539732/models/m-80f6519d02094c488c5d35a091b6c91a/artifacts
+creation_timestamp: 1767967623553
+experiment_id: '149571709700539732'
+last_updated_timestamp: 1767967629095
+model_id: m-80f6519d02094c488c5d35a091b6c91a
+model_type: null
+name: ND_boost_threshold_020
+source_run_id: 626634f558b049478bdda98cd9e8cdf1
+status: 2
+status_message: null
