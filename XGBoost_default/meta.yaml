@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/s434037/Desktop/Bachelor/mlruns/743219375735255287/models/m-d241cb1ceb254ff0a388f25485d9ac55/artifacts
+creation_timestamp: 1767796775084
+experiment_id: '743219375735255287'
+last_updated_timestamp: 1767796784766
+model_id: m-d241cb1ceb254ff0a388f25485d9ac55
+model_type: null
+name: ND_xg_boost
+source_run_id: e3ed9ebb19ba45b78e1413cdc5875416
+status: 2
+status_message: null

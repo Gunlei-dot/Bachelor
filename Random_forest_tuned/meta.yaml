@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/s434037/Desktop/Bachelor/mlruns/245297884006420114/models/m-0669547b8f7c46cd8de883813752a4a6/artifacts
+creation_timestamp: 1767864722113
+experiment_id: '245297884006420114'
+last_updated_timestamp: 1767864727008
+model_id: m-0669547b8f7c46cd8de883813752a4a6
+model_type: null
+name: ND_forest_RS42_min_leaf
+source_run_id: 061c6bf50b2b4e2a90f6c5e491e1ed78
+status: 2
+status_message: null

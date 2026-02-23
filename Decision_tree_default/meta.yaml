@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/s434037/Desktop/Bachelor/mlruns/743219375735255287/models/m-e5aadcd906fe4838ab13fb8aa109c6b5/artifacts
+creation_timestamp: 1767863305395
+experiment_id: '743219375735255287'
+last_updated_timestamp: 1767863314277
+model_id: m-e5aadcd906fe4838ab13fb8aa109c6b5
+model_type: null
+name: ND_tree
+source_run_id: d451d5c4c4264a3c879807c0187fc97d
+status: 2
+status_message: null

@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/s434037/Desktop/Bachelor/mlruns/245297884006420114/models/m-bc91bf1409bb4582bdd0dccf8a3b0488/artifacts
+creation_timestamp: 1767864572966
+experiment_id: '245297884006420114'
+last_updated_timestamp: 1767864577670
+model_id: m-bc91bf1409bb4582bdd0dccf8a3b0488
+model_type: null
+name: ND_boost_RS42_default
+source_run_id: 4437560c360c46299a2e35ed526c03b1
+status: 2
+status_message: null
